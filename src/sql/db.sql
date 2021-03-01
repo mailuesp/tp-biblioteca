@@ -1,3 +1,6 @@
+CREATE SCHEMA if not exists libros2;
+use libros2;
+
 -- phpMyAdmin SQL Dump
 -- version 5.0.4
 -- https://www.phpmyadmin.net/
