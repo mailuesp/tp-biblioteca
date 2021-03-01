@@ -1,0 +1,19 @@
+{
+  "name": "TP",
+  "version": "1.0.0",
+  "description": "",
+  "main": "appTP.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1", 
+    "start": "npx nodemon src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "npm": "^7.6.0",
+    "util": "^0.12.3"
+  }
+}
