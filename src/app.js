@@ -10,7 +10,7 @@ app.use(express.json()); // permite mapeo de la petición JSON a object JS
 const conexion = mysql.createConnection({
     host: "localhost", 
     user: "root",
-    password: "", 
+    password: "root", 
     database: "libros2"
 });
 
