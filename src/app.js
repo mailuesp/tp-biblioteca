@@ -1,7 +1,7 @@
-const { query } = require("express");
+// const { query } = require("express");
 const express = require("express");
 const mysql = require("mysql");
-const { allowedNodeEnvironmentFlags, send } = require("process");
+// const { allowedNodeEnvironmentFlags, send } = require("process");
 const util = require("util");
 
 const app = express();
