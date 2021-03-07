@@ -108,12 +108,38 @@ app.post("/api/categoria", async (req,res) => {
 
 
 // PERSONA 
+//Alan
+app.post("/api/persona", async (req,res) => {
+    try{
+        if(!req.body.nombre || !req.body.apellido || !req.body.alias || !req.body.email) {
+            res.status(413).send("Faltan datos");
+        }
+        const nombre = req.body.nombre.toUpperCase();
+        const apellido = req.body.apellido.toUpperCase();
+        const alias = req.body.alias.toUpperCase();
+        const email = req.body.email.toUpperCase();
+        query = "SELECT email FROM persona WHERE email = ? ";
+        respuesta = await qy(query, [email]);
+        if(respuesta.length > 0){
+            res.status(413).send("El email ya se encuentra registrado");
+        }else{
+            query = "INSERT INTO persona (nombre, apellido, alias, email) VALUE (?, ?, ?, ?)";
+            respuesta = await qy(query, [nombre, apellido, alias, email]);
+            let idAgregado = respuesta.insertId;
+            query = "SELECT * FROM persona WHERE id = ?";
+            respuesta = await qy(query, [idAgregado]);
+            res.status(200).send(respuesta);
+        }
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }
+});
 
 
 //Mailu: PUT persona/:id
-// PUT '/persona/:id' recibe: {nombre: string, apellido: string, alias: string, email: string} el email no se puede modificar. 
-// retorna status 200 y el objeto modificado o bien 
-// status 413 ,{mensaje: <descripcion del error>} "error inesperado", "no se encuentra esa persona"
+
 app.put('/api/persona/:id', async (req, res) => {
     try{
         const { nombre, apellido, alias, email } = req.body //extraigo del body los atributos que quiero guardar en const
