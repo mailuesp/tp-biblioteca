@@ -1,7 +1,5 @@
-// const { query } = require("express");
 const express = require("express");
 const mysql = require("mysql");
-// const { allowedNodeEnvironmentFlags, send } = require("process");
 const util = require("util");
 
 const app = express();
@@ -30,7 +28,7 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 app.get("/api/categoria", async (req, res) => {
     try {
         let query = "SELECT * FROM categoria";
-        respuesta = await qy(query, []);
+        let respuesta = await qy(query, []);
         res.status(200).send(respuesta);
     }
     catch (e) {
@@ -40,8 +38,8 @@ app.get("/api/categoria", async (req, res) => {
 
 app.get("/api/categoria/:id", async (req, res) => {
     try {
-        query = "SELECT * FROM categoria where id = ?";
-        respuesta = await qy(query, [req.params.id]);
+        let query = "SELECT * FROM categoria where id = ?";
+        let respuesta = await qy(query, [req.params.id]);
         if (respuesta.length > 0) {
             res.json(respuesta[0]);
         } else {
@@ -57,8 +55,8 @@ app.get("/api/categoria/:id", async (req, res) => {
 app.delete("/api/categoria/:id", async (req, res) => {
     try {
         // verifico que exista categoria
-        query = "SELECT * FROM categoria WHERE id = ?";
-        respuesta = await qy(query, [req.params.id]);
+        let query = "SELECT * FROM categoria WHERE id = ?";
+        let respuesta = await qy(query, [req.params.id]);
 
         if (respuesta.length == 0) {
             throw new Error("La categoría ingresada no existe");
@@ -87,8 +85,8 @@ app.post("/api/categoria", async (req, res) => {
             throw new Error('Debe ingresar todos los campos solicitados');
         }
         const nombre = req.body.nombre.toUpperCase();
-        query = "SELECT nombre from categoria where nombre = ? ";
-        respuesta = await qy(query, [nombre]);
+        let query = "SELECT nombre from categoria where nombre = ? ";
+        let respuesta = await qy(query, [nombre]);
         if (respuesta.length > 0) {
             throw new Error("El nombre de categoría ingresado ya existe");
         }
@@ -115,7 +113,7 @@ app.post("/api/categoria", async (req, res) => {
 app.get("/api/persona", async (req, res) => {
     try {
         let query = 'SELECT * from persona';
-        respuesta = await qy(query, []);
+        let respuesta = await qy(query, []);
         res.status(200).send(respuesta);
     } catch (e) {
         res.status(413).send({ "Error": e.message });
@@ -137,7 +135,7 @@ app.post("/api/persona", async (req, res) => {
         const alias = req.body.alias.toUpperCase();
         const email = req.body.email.toUpperCase();
         let query = "SELECT email FROM persona WHERE email = ? ";
-        respuesta = await qy(query, [email]);
+        let respuesta = await qy(query, [email]);
         if (respuesta.length > 0) {
             res.status(413).send("El email ya se encuentra registrado");
         } else {
