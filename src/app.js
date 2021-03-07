@@ -1,3 +1,4 @@
+const { query } = require("express");
 const express = require("express");
 const mysql = require("mysql");
 const { allowedNodeEnvironmentFlags, send } = require("process");
@@ -28,12 +29,11 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 
 app.get("/api/categoria", async (req, res) => {
     try {
-        query = "SELECT * FROM categoria";
+        let query = "SELECT * FROM categoria";
         respuesta = await qy(query, []);
         res.status(200).send(respuesta);
     }
     catch (e) {
-        console.error(e.message);
         res.status(413).send({ "Error": e.message });
     }
 });
@@ -55,19 +55,19 @@ app.get("/api/categoria/:id", async (req, res) => {
 });
 
 app.delete("/api/categoria/:id", async (req, res) => {
-    try{
+    try {
         // verifico que exista categoria
         query = "SELECT * FROM categoria WHERE id = ?";
         respuesta = await qy(query, [req.params.id]);
-        
-        if(respuesta.length == 0) {
+
+        if (respuesta.length == 0) {
             throw new Error("La categoría ingresada no existe");
         }
         //verifico que la categoría no tenga libros asociados
         query = "SELECT * FROM libros WHERE id_categoria = ?";
         respuesta = await qy(query, [req.params.id]);
-        
-        if(respuesta.length > 0) {
+
+        if (respuesta.length > 0) {
             throw new Error("Categoría con libros asociados, no se puede eliminar");
         }
         //borro la categoria
@@ -75,22 +75,22 @@ app.delete("/api/categoria/:id", async (req, res) => {
         respuesta = await qy(query, [req.params.id]);
         res.status(200).send("Categoría borrada correctamente");
     }
-    
-    catch(e){
-        res.status(413).send({"Error": e.message});
+
+    catch (e) {
+        res.status(413).send({ "Error": e.message });
     }
 })
 
-app.post("/api/categoria", async (req,res) => {
-    try{
-        if(!req.body.nombre) {
-            res.status(413).send("Debe ingresar todos los campos solicitados");
+app.post("/api/categoria", async (req, res) => {
+    try {
+        if (!req.body.nombre) {
+            throw new Error('Debe ingresar todos los campos solicitados');
         }
         const nombre = req.body.nombre.toUpperCase();
         query = "SELECT nombre from categoria where nombre = ? ";
         respuesta = await qy(query, [nombre]);
         if (respuesta.length > 0) {
-            res.status(413).send("El nombre de categoría ingresado ya existe");
+            throw new Error("El nombre de categoría ingresado ya existe");
         }
         query = "INSERT into categoria (nombre) VALUE (?)";
         respuesta = await qy(query, [nombre]);
@@ -109,32 +109,38 @@ app.post("/api/categoria", async (req,res) => {
 
 // PERSONA 
 //German
-app.get("/api/persona", async (req,res)=> {
+// retorna status 200 
+// y [{id: numerico, nombre: string, apellido: string, alias: string, email; string}] 
+// o bien status 413 y []
+app.get("/api/persona", async (req, res) => {
     try {
-    query = 'SELECT * from persona';
-    respuesta = await qy (query, []);
-    res.status(200) .send(respuesta);
-    } catch(e) {
-        console.log (e.message);
-        res.status(413) .send({"Error": e.message});
+        let query = 'SELECT * from persona';
+        respuesta = await qy(query, []);
+        res.status(200).send(respuesta);
+    } catch (e) {
+        res.status(413).send({ "Error": e.message });
     }
-    });
+});
 
 //Alan
-app.post("/api/persona", async (req,res) => {
-    try{
-        if(!req.body.nombre || !req.body.apellido || !req.body.alias || !req.body.email) {
-            res.status(413).send("Faltan datos");
+// recibe: {nombre: string, apellido: string, alias: string, email: string} retorna: status: 200, 
+// {id: numerico, nombre: string, apellido: string, alias: string, email: string} 
+// - status: 413, {mensaje: <descripcion del error>} que puede ser: "faltan datos", 
+// "el email ya se encuentra registrado", "error inesperado"
+app.post("/api/persona", async (req, res) => {
+    try {
+        if (!req.body.nombre || !req.body.apellido || !req.body.alias || !req.body.email) {
+            res.status(413).send("Debe completar todos los campos");
         }
         const nombre = req.body.nombre.toUpperCase();
         const apellido = req.body.apellido.toUpperCase();
         const alias = req.body.alias.toUpperCase();
         const email = req.body.email.toUpperCase();
-        query = "SELECT email FROM persona WHERE email = ? ";
+        let query = "SELECT email FROM persona WHERE email = ? ";
         respuesta = await qy(query, [email]);
-        if(respuesta.length > 0){
+        if (respuesta.length > 0) {
             res.status(413).send("El email ya se encuentra registrado");
-        }else{
+        } else {
             query = "INSERT INTO persona (nombre, apellido, alias, email) VALUE (?, ?, ?, ?)";
             respuesta = await qy(query, [nombre, apellido, alias, email]);
             let idAgregado = respuesta.insertId;
@@ -143,35 +149,44 @@ app.post("/api/persona", async (req,res) => {
             res.status(200).send(respuesta);
         }
     }
-    catch(e) {
+    catch (e) {
         console.error(e.message);
-        res.status(413).send({"Error": e.message});
+        res.status(413).send({ "Error": e.message });
     }
 });
 
 
 //Mailu: PUT persona/:id
-
+// PUT '/persona/:id' recibe: {nombre: string, apellido: string, alias: string, email: string} el email no se puede modificar. 
+// retorna status 200 y el objeto modificado o bien status 413,
+//  {mensaje: <descripcion del error>} "error inesperado", "no se encuentra esa persona"
 app.put('/api/persona/:id', async (req, res) => {
-    try{
-        const { nombre, apellido, alias, email } = req.body //extraigo del body los atributos que quiero guardar en const
+    try {
         const { id } = req.params
+        const { nombre, apellido, alias, email } = req.body.toUpperCase() //extraigo del body los atributos que quiero guardar en const
+        let respuesta = await qy("SELECT * FROM persona where id=?", [req.params.id]);
+        if (respuesta.length == 0) {
+            throw { codigo: 413, mensaje: 'La persona ingresada no existe' }
+        }
+
+        if (!req.body.nombre || !req.body.apellido || !req.body.alias || !req.body.email) {
+            throw { codigo: 413, mensaje: 'Debe completar todos los campos' }
+        }
         const respuestaUpdate = await qy(
             //pongo el email como condicion porque tmb lo recibo y no sé
             'update persona set nombre=?, apellido=?, alias=? where id=? and email=?',
             [nombre, apellido, alias, id, email]
         )
-        if(respuestaUpdate.affectedRows === 0) {
-            // console.log('estoy en el if')
-            throw { codigo:404, mensaje: "No se en cuentra la persona, verifique los datos y vuelva a intentarlo"}
+        if (respuestaUpdate.affectedRows === 0) {
+            throw { codigo: 404, mensaje: "El email no se puede modificar" }
         }
-        const respuestaSelect = await qy('select * from persona where id=? and email=?', [id , email]) //devuelvo mi objeto updateado
+        const respuestaSelect = await qy('select * from persona where id=? and email=?', [id, email]) //devuelvo mi objeto updateado
         res.status(200).send(respuestaSelect[0])
     } catch (error) {
-        if(error.codigo) {
+        if (error.codigo) {
             res.status(error.codigo).send(error.mensaje)
         } else {
-            res.status(400).send("Error inesperado")
+            res.status(413).send("Error inesperado")
         }
 
     }
