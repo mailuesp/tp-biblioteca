@@ -1,21 +1,22 @@
 const express = require("express");
 const mysql = require("mysql");
+const { allowedNodeEnvironmentFlags, send } = require("process");
 const util = require("util");
 
-const app = express ();
+const app = express();
 const port = 3000;
 
 app.use(express.json()); // permite mapeo de la petición JSON a object JS
 
 const conexion = mysql.createConnection({
-    host: "localhost", 
+    host: "localhost",
     user: "root",
-    password: "root", 
+    password: "root",
     database: "libros2"
 });
 
-conexion.connect((error)=>{
-    if(error){throw error;} 
+conexion.connect((error) => {
+    if (error) { throw error; }
     console.log("Conexión con la base de datos establecida");
 });
 
@@ -25,61 +26,99 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 
 // GET de categorias
 
-app.get("/api/categoria", async (req,res) => {
-    try{
+app.get("/api/categoria", async (req, res) => {
+    try {
         query = "SELECT * FROM categoria";
         respuesta = await qy(query, []);
-        res.status(200).send(respuesta); 
+        res.status(200).send(respuesta);
     }
-    catch(e) {
+    catch (e) {
         console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }    
+        res.status(413).send({ "Error": e.message });
+    }
 });
 
-app.get("/api/categoria/:id", async (req,res) => {
-    try{
+app.get("/api/categoria/:id", async (req, res) => {
+    try {
         query = "SELECT * FROM categoria where id = ?";
         respuesta = await qy(query, [req.params.id]);
-        if(respuesta.length > 0){
+        if (respuesta.length > 0) {
             res.json(respuesta[0]);
         } else {
             res.status(404).send("La categoría ingresada no existe");
-        }         
+        }
     }
-    catch(e) {
+    catch (e) {
         console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }    
+        res.status(413).send({ "Error": e.message });
+    }
 });
 
-app.post("/api/categoria", async (req,res) => {
-    try{
-        if(!req.body.nombre) {
+app.post("/api/categoria", async (req, res) => {
+    try {
+        if (!req.body.nombre) {
             res.status(413).send("Debe ingresar todos los campos solicitados");
         }
         const nombre = req.body.nombre.toUpperCase();
         query = "SELECT nombre from categoria where nombre = ? ";
         respuesta = await qy(query, [nombre]);
-        if(respuesta.length > 0){
+        if (respuesta.length > 0) {
             res.status(413).send("El nombre de categoría ingresado ya existe");
         }
         query = "INSERT into categoria (nombre) VALUE (?)";
         respuesta = await qy(query, [nombre]);
-       // res.status(200).send(respuesta); 
+        // res.status(200).send(respuesta); 
         let idAgregado = respuesta.insertId;
         query = "SELECT * from categoria WHERE id = ?";
         respuesta = await qy(query, [idAgregado]);
         res.status(200).send(respuesta);
     }
-    catch(e) {
+    catch (e) {
         console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }    
+        res.status(413).send({ "Error": e.message });
+    }
 });
+
+
+// PERSONA 
+
+
+//Mailu: PUT persona/:id
+// PUT '/persona/:id' recibe: {nombre: string, apellido: string, alias: string, email: string} el email no se puede modificar. 
+// retorna status 200 y el objeto modificado o bien 
+// status 413 ,{mensaje: <descripcion del error>} "error inesperado", "no se encuentra esa persona"
+app.put('/api/persona/:id', async (req, res) => {
+    try{
+        const { nombre, apellido, alias, email } = req.body //extraigo del body los atributos que quiero guardar en const
+        const { id } = req.params
+        const respuestaUpdate = await qy(
+            //pongo el email como condicion porque tmb lo recibo y no sé
+            'update persona set nombre=?, apellido=?, alias=? where id=? and email=?',
+            [nombre, apellido, alias, id, email]
+        )
+        if(respuestaUpdate.affectedRows === 0) {
+            // console.log('estoy en el if')
+            throw { codigo:404, mensaje: "No se en cuentra la persona, verifique los datos y vuelva a intentarlo"}
+        }
+        const respuestaSelect = await qy('select * from persona where id=? and email=?', [id , email]) //devuelvo mi objeto updateado
+        res.status(200).send(respuestaSelect[0])
+    } catch (error) {
+        if(error.codigo) {
+            res.status(error.codigo).send(error.mensaje)
+        } else {
+            res.status(400).send("Error inesperado")
+        }
+
+    }
+})
+
+
+
+//LIBROS
+
+
 
 // Activar servidor local
 
-app.listen(port, ()=>
-    {console.log("Servidor escuchando en el puerto ", port)}
+app.listen(port, () => { console.log("Servidor escuchando en el puerto ", port) }
 );
