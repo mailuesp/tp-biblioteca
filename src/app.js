@@ -54,9 +54,36 @@ app.get("/api/categoria/:id", async (req, res) => {
     }
 });
 
-app.post("/api/categoria", async (req, res) => {
-    try {
-        if (!req.body.nombre) {
+app.delete("/api/categoria/:id", async (req, res) => {
+    try{
+        // verifico que exista categoria
+        query = "SELECT * FROM categoria WHERE id = ?";
+        respuesta = await qy(query, [req.params.id]);
+        
+        if(respuesta.length == 0) {
+            throw new Error("La categoría ingresada no existe");
+        }
+        //verifico que la categoría no tenga libros asociados
+        query = "SELECT * FROM libros WHERE id_categoria = ?";
+        respuesta = await qy(query, [req.params.id]);
+        
+        if(respuesta.length > 0) {
+            throw new Error("Categoría con libros asociados, no se puede eliminar");
+        }
+        //borro la categoria
+        query = "DELETE FROM categoria WHERE id = ?";
+        respuesta = await qy(query, [req.params.id]);
+        res.status(200).send("Categoría borrada correctamente");
+    }
+    
+    catch(e){
+        res.status(413).send({"Error": e.message});
+    }
+})
+
+app.post("/api/categoria", async (req,res) => {
+    try{
+        if(!req.body.nombre) {
             res.status(413).send("Debe ingresar todos los campos solicitados");
         }
         const nombre = req.body.nombre.toUpperCase();
