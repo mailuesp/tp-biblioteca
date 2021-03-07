@@ -108,6 +108,18 @@ app.post("/api/categoria", async (req,res) => {
 
 
 // PERSONA 
+//German
+app.get("/api/persona", async (req,res)=> {
+    try {
+    query = 'SELECT * from persona';
+    respuesta = await qy (query, []);
+    res.status(200) .send(respuesta);
+    } catch(e) {
+        console.log (e.message);
+        res.status(413) .send({"Error": e.message});
+    }
+    });
+
 //Alan
 app.post("/api/persona", async (req,res) => {
     try{
