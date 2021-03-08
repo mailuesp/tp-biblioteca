@@ -6,6 +6,7 @@ const app = express();
 const port = 3000;
 
 app.use(express.json()); // permite mapeo de la petición JSON a object JS
+app.use(bodyToUpper) //NUestro casteador de los campos a Mayusculas
 
 const conexion = mysql.createConnection({
     host: "localhost",
@@ -20,6 +21,19 @@ conexion.connect((error) => {
 });
 
 const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de async-away en la conexion con mysql
+
+// estas dos cosas son exactamente lo mismo: body.name === body['name']
+// si al momento de escribir el código, yo no se el nombre, puedo acceder con una variable:
+// body[variable], donde la variable tiene un string
+function bodyToUpper(req, res, next) {
+    const { body } = req
+    for (const campo in body) {
+       if (typeof body[campo] === 'string' ) {
+           body[campo] = body[campo].toUpperCase()
+       }
+    }
+    next()
+}
 
 // empieza la app
 
@@ -177,7 +191,7 @@ app.post("/api/persona", async (req, res) => {
 app.put('/api/persona/:id', async (req, res) => {
     try {
         const { id } = req.params
-        const { nombre, apellido, alias, email } = req.body.toUpperCase() //extraigo del body los atributos que quiero guardar en const
+        const { nombre, apellido, alias, email } = req.body //extraigo del body los atributos que quiero guardar en const
         let respuesta = await qy("SELECT * FROM persona where id=?", [req.params.id]);
         if (respuesta.length == 0) {
             throw { codigo: 413, mensaje: 'La persona ingresada no existe' }
@@ -319,7 +333,7 @@ app.post("/api/libro", async (req, res) => {
             throw new Error("No existe esa categoría");
         } 
         // Valido si existe persona ingresada // REVISAR ESTO PARA LA VALIDACION
-       if(id_persona != null){
+        if (id_persona != null) {
             query = "SELECT * FROM persona WHERE id = ? ";
             respuesta = await qy(query, [id_persona]);
             if (respuesta.length == 0) {
