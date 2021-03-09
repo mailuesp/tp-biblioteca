@@ -325,20 +325,20 @@ app.post("/api/libro", async (req, res) => {
         let respuesta = await qy(query, [nombre]);
         if (respuesta.length > 0) {
             throw new Error("El libro ingresado ya estaba registrado");
-        } 
+        }
         // Valido si existe categoría ingresada
         query = "SELECT * FROM categoria WHERE id= ? ";
         respuesta = await qy(query, [id_categoria]);
         if (respuesta.length == 0) {
             throw new Error("No existe esa categoría");
-        } 
+        }
         // Valido si existe persona ingresada // REVISAR ESTO PARA LA VALIDACION
         if (id_persona != null) {
             query = "SELECT * FROM persona WHERE id = ? ";
             respuesta = await qy(query, [id_persona]);
             if (respuesta.length == 0) {
                 throw new Error("No existe esa persona");
-            } 
+            }
         }
         // QUERY DE INSERCION
         query = "INSERT INTO libros (nombre, descripcion, id_categoria, id_persona) VALUE (?, ?, ?, ?)";
@@ -346,7 +346,7 @@ app.post("/api/libro", async (req, res) => {
         let idAgregado = respuesta.insertId;
         query = "SELECT * FROM libros WHERE id = ?";
         respuesta = await qy(query, [idAgregado]);
-        res.status(200).send(respuesta[0]);        
+        res.status(200).send(respuesta[0]);
     }
     catch (e) {
         console.error(e.message);
