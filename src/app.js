@@ -11,7 +11,7 @@ app.use(bodyToUpper) //NUestro casteador de los campos a Mayusculas
 const conexion = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "",
+    password: "root",
     database: "libros2"
 });
 
@@ -28,9 +28,9 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 function bodyToUpper(req, res, next) {
     const { body } = req
     for (const campo in body) {
-       if (typeof body[campo] === 'string' ) {
-           body[campo] = body[campo].toUpperCase()
-       }
+        if (typeof body[campo] === 'string') {
+            body[campo] = body[campo].toUpperCase()
+        }
     }
     next()
 }
@@ -354,17 +354,21 @@ app.post("/api/libro", async (req, res) => {
     }
 });
 
-// PUT '/libro/:id' y {id: numero, nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} devuelve status 200 y {id: numero, nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} modificado o bien status 413, {mensaje: <descripcion del error>} "error inesperado",  "solo se puede modificar la descripcion del libro
+//  PUT '/libro/:id' y {id: numero, nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} 
+// devuelve status 200 y {id: numero, nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} 
+// modificado o bien status 413, {mensaje: <descripcion del error>} "error inesperado",  "solo se puede modificar la descripcion del libro
 
 app.put('/api/libro/:id', async (req, res) => {
     try {
         // valido que el ID ingresado se corresponda a un libro
-        let respuesta = await qy("SELECT * FROM libros where id=?", [req.params.id]);        
+        let respuesta = await qy("SELECT * FROM libros where id=?", [req.params.id]);
         if (respuesta.length == 0) {
             throw { codigo: 413, mensaje: 'No se encuentra el libro ingresado' }
         }
         // valido que se hayan ingresado los campos nombre, descripcion y categoria
-        if (!req.body.nombre || !req.body.descripcion || !req.body.id_categoria ) {throw { codigo: 413, mensaje: 'Debe completar los campos nombre, descripción y categoría'}}
+        if (!req.body.nombre || !req.body.descripcion || !req.body.id_categoria) { 
+            throw { codigo: 413, mensaje: 'Debe completar los campos nombre, descripción y categoría' } 
+        }
         // valido que no se modifiquen los campos nombre y categoria
         respuesta = await qy("SELECT * FROM libros where id=? and nombre =? and id_categoria =?", [req.params.id, req.body.nombre, req.body.id_categoria]);
         if (respuesta.length == 0) {
@@ -372,16 +376,16 @@ app.put('/api/libro/:id', async (req, res) => {
         }
         //valido que no se intente modificar desde acá la persona a la que se presta el libro, ya que eso se hace desde las rutas /prestar o /devolver
         //chequeo si puso campo id_persona, y en caso positivo, hago query para ver que no la haya cambiado
-        if(req.body.id_persona){
+        if (req.body.id_persona) {
             respuesta = await qy("SELECT * FROM libros where id=? and id_persona =?", [req.params.id, req.body.id_persona]);
-            if(respuesta.length == 0) {
+            if (respuesta.length == 0) {
                 throw { codigo: 413, mensaje: 'El usuario que actualmente posee el libro se modifica desde las rutas /prestar y /devolver' }
             }
         }
         // updateo el campo descripción
         respuesta = await qy('update libros set descripcion=? where id=?', [req.body.descripcion, req.params.id]);
         //devuelvo mi objeto updateado
-        respuesta = await qy('select * from libros where id=?', [req.params.id]); 
+        respuesta = await qy('select * from libros where id=?', [req.params.id]);
         res.status(200).send(respuesta[0]);
     } catch (error) {
         if (error.codigo) {
@@ -393,7 +397,56 @@ app.put('/api/libro/:id', async (req, res) => {
 })
 
 
-// PUT '/libro/prestar/:id' y {id:numero, persona_id:numero} devuelve 200 y {mensaje: "se presto correctamente"} o bien status 413, {mensaje: <descripcion del error>} "error inesperado", "el libro ya se encuentra prestado, no se puede prestar hasta que no se devuelva", "no se encontro el libro", "no se encontro la persona a la que se quiere prestar el libro"
+// PUT '/libro/prestar/:id' y {id:numero, persona_id:numero} devuelve 200 y {mensaje: "se presto correctamente"} 
+o bien status 413, {mensaje: <descripcion del error>} "error inesperado", 
+"el libro ya se encuentra prestado, no se puede prestar hasta que no se devuelva", "no se encontro el libro", 
+"no se encontro la persona a la que se quiere prestar el libro"
+
+app.put('/api/libro/prestar/:id', async (req, res) => {
+    try {
+        // valido que el ID ingresado se corresponda a un libro
+        let respuesta = await qy("SELECT * FROM libros where id=?", [req.params.id]);
+        if (respuesta.length == 0) {
+            throw { codigo: 413, mensaje: 'No se encuentra el libro ingresado' }
+        }
+
+        // valido que el libro no este ya prestado
+        respuesta = await qy("SELECT id_persona FROM libros where id=?", [req.params.id]);
+        if (respuesta[0].id_persona !== null) {
+            throw { codigo: 413, mensaje: 'Este libro ya se encuentra prestado, no se puede volver a prestar hasta que no se devuelva' }
+        }
+
+        // valido que se hayan ingresado el campos id_persona
+        if (!req.body.id_persona) { throw { codigo: 413, mensaje: 'Debe indicar la persona a la que se le prestará el libro' } }
+
+        // valido que haya ingresado a una persona que se encuentre previamente cargado en la tabla persona
+        respuesta = await qy("SELECT * FROM persona where id=?", [req.body.id_persona]);
+        if (respuesta.length == 0) {
+            throw { codigo: 413, mensaje: 'La persona a la que se le pretende prestar el libro no esta registrada' }
+        }
+
+        //valido que no se intente modificar desde acá otro dato
+        if (req.body.nombre || req.body.descripcion || req.body.id_categoria) {
+            throw { codigo: 413, mensaje: 'En esta sección sólo se pueden prestar libros, no intente modificar otros datos' }
+        }
+
+        // ejecuto la sentencia UPDATE en el campo id_persona
+        respuesta = await qy('UPDATE libros SET id_persona=? WHERE id=?', [req.body.id_persona, req.params.id]);
+
+        //devuelvo mi objeto con los cambios realizados
+        respuesta = await qy('SELECT * FROM libros WHERE id=?', [req.params.id]);
+        prestatario = await qy('SELECT * FROM persona where id=?', [req.body.id_persona]);
+
+        res.status(200).send("Se prestó el libro " + respuesta[0].nombre + "/id:" + respuesta[0].id + " a " + prestatario[0].nombre + " " + prestatario[0].apellido + "/id:" + prestatario[0].id);
+
+    } catch (error) {
+        if (error.codigo) {
+            res.status(error.codigo).send(error.mensaje)
+        } else {
+            res.status(413).send("Error inesperado")
+        }
+    }
+})
 
 // PUT '/libro/devolver/:id' y {} devuelve 200 y {mensaje: "se realizo la devolucion correctamente"} o bien status 413, {mensaje: <descripcion del error>} "error inesperado", "ese libro no estaba prestado!", "ese libro no existe"
 

@@ -52,7 +52,7 @@ INSERT INTO `categoria` (`id`, `nombre`) VALUES
 CREATE TABLE `libros` (
   `id` int(11) NOT NULL,
   `nombre` varchar(250) NOT NULL,
-  `descripcion` varchar(250) DEFAULT NULL,
+  `descripcion` varchar(250) NOT NULL,
   `id_categoria` int(11) NOT NULL,
   `id_persona` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
