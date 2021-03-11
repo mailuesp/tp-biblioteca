@@ -7,12 +7,13 @@ const port = 3000;
 
 app.use(express.json()); // permite mapeo de la petición JSON a object JS
 app.use(bodyToUpper) //NUestro casteador de los campos a Mayusculas
+app.use(policiaDelBlank)
 app.use(cors())
 
 const conexion = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "root",
+    password: "",
     database: "libros2"
 });
 
@@ -31,6 +32,16 @@ function bodyToUpper(req, res, next) {
     for (const campo in body) {
         if (typeof body[campo] === 'string') {
             body[campo] = body[campo].toUpperCase()
+        }
+    }
+    next()
+}
+
+function policiaDelBlank(req, res, next) {
+    const { body } = req
+    for (const campo in body) {
+        if (!body[campo]) {
+            res.status(400).send("policia: Debe ingresar todos los campos solicitados")
         }
     }
     next()
