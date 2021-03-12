@@ -116,7 +116,7 @@ app.delete("/api/categoria/:id", async (req, res) => {
 app.post("/api/categoria", async (req, res) => {
     try {
         if (!req.body.nombre) {
-            throw new Error('Debe ingresar todos los campos solicitados');
+            throw {codigo: 400, mensaje: 'Debe ingresar todos los campos solicitados'};
         }
         const nombre = req.body.nombre;
         let query = "SELECT nombre from categoria where nombre = ? ";
@@ -350,7 +350,7 @@ app.delete("/api/libro/:id", async (req, res) => {
 app.post("/api/libro", async (req, res) => {
     try {
         if (!req.body.nombre || !req.body.descripcion || !req.body.id_categoria) {
-            throw {mensaje:400, mensaje:"Debe completar todos los campos"};
+            throw {codigo:400, mensaje:"Debe completar todos los campos"};
         }
         const nombre = req.body.nombre;
         const descripcion = req.body.descripcion; // NO SABEMOS SI ES OBLIGATORIO
@@ -466,7 +466,7 @@ app.put('/api/libro/prestar/:id', async (req, res) => {
 
         //valido que no se intente modificar desde acá otro dato
         if (req.body.nombre || req.body.descripcion || req.body.id_categoria) {
-            throw { codigo: 400, mensaje: 'En esta ruta el unico dato admitido es el ID de la persona a prestar' }
+            throw { codigo: 400, mensaje: 'En esta ruta el unico dato admitido es el ID de la persona que recibirá el libro' }
         }
 
         // ejecuto la sentencia UPDATE en el campo id_persona
