@@ -43,6 +43,7 @@ function validacionEspacios(req, res, next) {
         for (const campo in body) {
             if (typeof body[campo] === 'string') {
                 if (!body[campo].trim()) {
+                // la otra opción en vez del IF anterior podría ser : if (!/[\w]/.test(body[campo])), esto chequea que por lo menos 1 caracter en el campo sea diferente del caracter "espacio vacío" (" ")
                     throw new Error('Debe ingresar todos los campos solicitados')
                 }
             }
@@ -52,6 +53,27 @@ function validacionEspacios(req, res, next) {
         res.status(400).send(error.message)
     }
 }
+
+/*
+este sería un middleware para ver que si uno ingresa un campo en JSON y le pone "" o "null" devuelva error, excepto que sea "id_persona" donde el null cumple una función productiva (indicar que el libro está en biblioteca)
+
+app.use(chequearNulos);
+
+function chequearNulos(req, res, next) {
+    const { body } = req
+    try {        
+        for (const campo in body) {
+            if (!body[campo]  && body.id_persona != null) {
+                throw new Error("Los campos no se pueden enviar sin información")
+            }
+        }
+        next()
+    }
+    catch (error) {
+        res.status(400).send(error.message)
+    }
+}
+*/
 
 // empieza la app
 
