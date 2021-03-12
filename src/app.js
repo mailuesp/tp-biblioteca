@@ -7,7 +7,7 @@ const port = 3000;
 
 app.use(express.json()); // permite mapeo de la petición JSON a object JS
 app.use(bodyToUpper) //NUestro casteador de los campos a Mayusculas
-app.use(policiaDelBlank)
+app.use(validacionEspacios)
 app.use(cors())
 
 const conexion = mysql.createConnection({
@@ -37,14 +37,20 @@ function bodyToUpper(req, res, next) {
     next()
 }
 
-function policiaDelBlank(req, res, next) {
+function validacionEspacios(req, res, next) {
     const { body } = req
-    for (const campo in body) {
-        if (!body[campo]) {
-            res.status(400).send("policia: Debe ingresar todos los campos solicitados")
+    try {
+        for (const campo in body) {
+            if (typeof body[campo] === 'string') {
+                if (!body[campo].trim()) {
+                    throw new Error('Debe ingresar todos los campos solicitados')
+                }
+            }
         }
+        next()
+    } catch (error) {
+        res.status(400).send(error.message)
     }
-    next()
 }
 
 // empieza la app
