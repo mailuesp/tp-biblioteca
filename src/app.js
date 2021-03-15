@@ -31,7 +31,7 @@ function bodyToUpper(req, res, next) {
     const { body } = req
     for (const campo in body) {
         if (typeof body[campo] === 'string') {
-            body[campo] = body[campo].toUpperCase()
+            body[campo] = body[campo].toUpperCase().trim()
         }
     }
     next()
@@ -43,7 +43,7 @@ function validacionEspacios(req, res, next) {
         for (const campo in body) {
             if (typeof body[campo] === 'string') {
                 if (!body[campo].trim()) {
-                // la otra opción en vez del IF anterior podría ser : if (!/[\w]/.test(body[campo])), esto chequea que por lo menos 1 caracter en el campo sea diferente del caracter "espacio vacío" (" ")
+                    // la otra opción en vez del IF anterior podría ser : if (!/[\w]/.test(body[campo])), esto chequea que por lo menos 1 caracter en el campo sea diferente del caracter "espacio vacío" (" ")
                     throw new Error('Debe ingresar todos los campos solicitados')
                 }
             }
@@ -144,7 +144,7 @@ app.delete("/api/categoria/:id", async (req, res) => {
 app.post("/api/categoria", async (req, res) => {
     try {
         if (!req.body.nombre) {
-            throw {codigo: 400, mensaje: 'Debe ingresar todos los campos solicitados'};
+            throw { codigo: 400, mensaje: 'Debe ingresar todos los campos solicitados' };
         }
         const nombre = req.body.nombre;
         let query = "SELECT nombre from categoria where nombre = ? ";
@@ -349,14 +349,14 @@ app.delete("/api/libro/:id", async (req, res) => {
         let respuesta = await qy(query, [req.params.id]);
 
         if (respuesta.length == 0) {
-            throw {codigo:404, mensaje:"No se encuentra el libro ingresado"};
+            throw { codigo: 404, mensaje: "No se encuentra el libro ingresado" };
         }
         //verifico que la persona no tenga libros asociados
         query = "SELECT id_persona FROM libros WHERE id = ?";
         respuesta = await qy(query, [req.params.id]);
 
         if (respuesta[0].id_persona != null) {
-            throw  {codigo:400, mensaje:"Libro prestado, no se puede eliminar"};
+            throw { codigo: 400, mensaje: "Libro prestado, no se puede eliminar" };
         }
         //borro la categoria
         query = "DELETE FROM libros WHERE id = ?";
@@ -378,7 +378,7 @@ app.delete("/api/libro/:id", async (req, res) => {
 app.post("/api/libro", async (req, res) => {
     try {
         if (!req.body.nombre || !req.body.descripcion || !req.body.id_categoria) {
-            throw {codigo:400, mensaje:"Debe completar todos los campos"};
+            throw { codigo: 400, mensaje: "Debe completar todos los campos" };
         }
         const nombre = req.body.nombre;
         const descripcion = req.body.descripcion; // NO SABEMOS SI ES OBLIGATORIO
@@ -388,20 +388,20 @@ app.post("/api/libro", async (req, res) => {
         let query = "SELECT * FROM libros WHERE nombre = ? ";
         let respuesta = await qy(query, [nombre]);
         if (respuesta.length > 0) {
-            throw {codigo: 400, mensaje:"El libro ingresado ya estaba registrado"};
+            throw { codigo: 400, mensaje: "El libro ingresado ya estaba registrado" };
         }
         // Valido si existe categoría ingresada
         query = "SELECT * FROM categoria WHERE id= ? ";
         respuesta = await qy(query, [id_categoria]);
         if (respuesta.length == 0) {
-            throw {codigo:404, mensaje:"No existe esa categoría"};
+            throw { codigo: 404, mensaje: "No existe esa categoría" };
         }
         // Valido si existe persona ingresada // REVISAR ESTO PARA LA VALIDACION
         if (id_persona != null) {
             query = "SELECT * FROM persona WHERE id = ? ";
             respuesta = await qy(query, [id_persona]);
             if (respuesta.length == 0) {
-                throw {codigo:404, mensaje:"No existe esa persona"};
+                throw { codigo: 404, mensaje: "No existe esa persona" };
             }
         }
         // QUERY DE INSERCION
