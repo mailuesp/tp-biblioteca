@@ -15,7 +15,7 @@ const conexion = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "libros2"
+    database: "libros2" // se adjunta base de datos en carpeta sql como archivo db.sql
 });
 
 conexion.connect((error) => {
